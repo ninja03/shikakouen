@@ -79,8 +79,7 @@ end
 puts 'nara procon system'
 puts
 
-
-uri = URI.parse('http://localhost:4567')
+uri = URI.parse('http://localhost:4567/question')
 json = Net::HTTP.get(uri)
 json_data = JSON.parse(json)
 
@@ -103,3 +102,10 @@ print_board new_board
 puts 'up'
 new_board = katanuki(board, kata, 1, 2, 'up')
 print_board new_board
+
+uri = URI.parse('http://localhost:4567/answer')
+json = Net::HTTP.post(
+  uri,
+  { key: 'value' }.to_json,
+  'Content-Type' => 'application/json'
+)
