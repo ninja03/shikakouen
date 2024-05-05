@@ -1,0 +1,44 @@
+
+<a href="/sample"><button>サンプル問題を読み込む</button></a>
+<a href="/random"><button>ランダム問題を作成する</button></a>
+<a href="/api/question">問題API</a>
+<br>
+<br>
+<% colors = ["pink", "lightblue", "lightgreen", "orange"] %>
+<% colors2 = ["lightgray", "black"] %>
+
+初期状態
+<table cellspacing="0">
+  <% for y in 0...@question['board']['height'] %>
+    <tr>
+    <% for x in 0...@question['board']['width'] %>
+      <td style="width: 2px; height: 2px" bgcolor=<%= colors[@question['board']['start'][y][x].to_i] %>></td>
+    <% end %>
+    </tr>
+  <% end %>
+</table>
+
+最終状態
+<table cellspacing="0">
+  <% for y in 0...@question['board']['height'] %>
+    <tr>
+    <% for x in 0...@question['board']['width'] %>
+      <td style="width: 2px; height: 2px" bgcolor=<%= colors[@question['board']['goal'][y][x].to_i] %>></td>
+    <% end %>
+    </tr>
+  <% end %>
+</table>
+
+一般抜き型<br>
+<% @question['general']['patterns'].each do |pattern| %>
+  <%= pattern["p"] %>
+  <table>
+    <% for y in 0...pattern['height'] %>
+      <tr>
+      <% for x in 0...pattern['width'] %>
+        <td style="width: 2px; height: 2px" bgcolor=<%= colors2[pattern['cells'][y][x].to_i] %>></td>
+      <% end %>
+      </tr>
+    <% end %>
+  </table>
+<% end %>
