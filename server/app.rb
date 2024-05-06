@@ -100,7 +100,9 @@ def shuffle_board(board, katalist)
   3.times do
     kata = katalist.sample
     dir = [:left, :right, :down, :up].sample
-    board = katanuki(board, kata, 0, 0, dir)
+    px = rand(0..(board[0].size - kata[0].size))
+    py = rand(0..(board.size - kata.size))
+    board = katanuki(board, kata, px, py, dir)
   end
   board
 end
