@@ -15,10 +15,10 @@ def katanuki(board, kata, px, py, dir)
   new_board = []
   case dir
   when 'left'
-    for y in 0...bh
+    bh.times do |y|
       normal_buf = []
       kata_buf = []
-      for x in 0...bw
+      bw.times do |x|
         a = board[y][x]
         if x >= px and x < px + kw and y >= py and y < py + kh and kata[y - py][x - px] == 1
           kata_buf << a
@@ -29,10 +29,10 @@ def katanuki(board, kata, px, py, dir)
       new_board << normal_buf + kata_buf
     end
   when 'right'
-    for y in 0...bh
+    bh.times do |y|
       normal_buf = []
       kata_buf = []
-      for x in 0...bw
+      bw.times do |x|
         a = board[y][x]
         if x >= px and x < px + kw and y >= py and y < py + kh and kata[y - py][x - px] == 1
           kata_buf << a
@@ -43,10 +43,10 @@ def katanuki(board, kata, px, py, dir)
       new_board << kata_buf + normal_buf
     end
   when 'down'
-    for x in 0...bw
+    bw.times do |x|
       normal_buf = []
       kata_buf = []
-      for y in 0...bh
+      bh.times do |y|
         a = board[y][x]
         if x >= px and x < px + kw and y >= py and y < py + kh and kata[y - py][x - px] == 1
           kata_buf << a
@@ -58,10 +58,10 @@ def katanuki(board, kata, px, py, dir)
     end
     new_board = new_board.transpose
   when 'up'
-    for x in 0...bw
+    bw.times do |x|
       normal_buf = []
       kata_buf = []
-      for y in 0...bh
+      bh.times do |y|
         a = board[y][x]
         if x >= px and x < px + kw and y >= py and y < py + kh and kata[y - py][x - px] == 1
           kata_buf << a
@@ -83,8 +83,8 @@ uri = URI.parse('http://localhost:4567/api/question')
 json = Net::HTTP.get(uri)
 json_data = JSON.parse(json)
 
-board = json_data['board']['start'].map{|row| row.split("").map(&:to_i)}
-kata = json_data['general']['patterns'][0]['cells'].map{|row| row.split("").map(&:to_i)}
+board = json_data['board']['start'].map{ |row| row.split("").map(&:to_i) }
+kata = json_data['general']['patterns'][0]['cells'].map{ |row| row.split("").map(&:to_i) }
 
 puts 'board'
 print_board board

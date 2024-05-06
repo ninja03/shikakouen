@@ -1,7 +1,16 @@
-require 'sinatra'
 require 'json'
+require "tempfile"
+require 'sinatra'
+require "sinatra/json"
+require 'cairo'
 
-$question = JSON.load(File.read('question.json'))
+def load_sample_question
+  JSON.load(File.read('question.json'))
+end
+
+configure do
+  $question = load_sample_question
+end
 
 get "/" do
   @question = $question
@@ -9,56 +18,83 @@ get "/" do
 end
 
 get "/sample" do
-  $question = JSON.load(File.read('question.json'))
-  pp $question
+  $question = load_sample_question
   redirect "/"
 end
 
 get "/random" do
-  width = rand(32..256)
-  height = rand(32..256)
-  start = Array.new(height) { Array.new(width) { rand(4) }.join }
-  goal = Array.new(height) { Array.new(width) { rand(4) }.join }
-  general_n = rand(3)
-  general_patterns = []
-
-  general_i = 25
-  for i in 0..general_n
-    pattern_width = rand(1..10)
+  board_width = rand(32..256)
+  board_height = rand(32..256)
+  start = Array.new(board_height) { Array.new(board_width) { rand(4) }.join }
+  goal = Array.new(board_height) { Array.new(board_width) { rand(4) }.join }
+  general_patterns = (1..rand(1..3)).map do |i|
+    pattern_width = rand(1..10),
     pattern_height = rand(1..10)
-    general_patterns << {
-      "p" => general_i,
+    {
+      "p" => 25 + i,
       "width" => pattern_width,
       "height" => pattern_height,
       "cells" => Array.new(pattern_height) { Array.new(pattern_width) { rand(2) }.join }
     }
-    general_i += 1
   end
 
   $question = {
     "board" => {
-      "width" => width,
-      "height" => height,
+      "width" => board_width,
+      "height" => board_height,
       "start" => start,
       "goal" => goal
     },
     "general" => {
-      "n" => general_n,
+      "n" => general_patterns.size,
       "patterns" => general_patterns
     }
   }
-
-  pp $question
 
   redirect "/"
 end
 
 get '/api/question' do
-  content_type :json
-  $question.to_json
+  json $question
 end
 
 post '/api/answer' do
   params = JSON.parse(request.body.read)
-  print params
+end
+
+get '/image/start' do
+  board = $question['board']
+  colors = ["pink", "lightblue", "lightgreen", "orange"]
+  create_image(board['width'], board['height'], board["goal"], colors)
+end
+
+get "/image/goal" do
+  board = $question['board']
+  colors = ["pink", "lightblue", "lightgreen", "orange"]
+  create_image(board['width'], board['height'], board["goal"], colors)
+end
+
+get "/image/pattern/:p" do
+  pattern = $question['general']['patterns'].find do |p|
+    p["p"] == params[:p].to_i
+  end
+  colors = ["lightgray", "black"]
+  create_image( pattern["width"], pattern["height"], pattern["cells"], colors)
+end
+
+def create_image(board_width, board_height, data, colors)
+  Tempfile.create do |f|
+    ps = 4
+    surface = Cairo::ImageSurface.new(Cairo::FORMAT_ARGB32, board_width * ps, board_height * ps)
+    context = Cairo::Context.new(surface)
+    board_height.times do |y|
+      board_width.times do |x|
+        context.set_source_color(colors[data[y][x].to_i])
+        context.rectangle(x * ps, y * ps, ps, ps)
+        context.fill
+      end
+    end
+    surface.write_to_png(f.path)
+    File.binread(f.path)
+  end
 end
