@@ -11,7 +11,7 @@
 <img src="/image/goal"><br>
 <br>
 一般抜き型<br>
-<% @question['general']['patterns'].each do |pattern| %>
-  <img src="/image/pattern/<%= pattern['p'] %>"><br>
+<% @question[:general][:patterns].each do |pattern| %>
+  <img src="/image/pattern/<%= pattern[:p] %>"><br>
   <br>
 <% end %>
