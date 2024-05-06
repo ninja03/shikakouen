@@ -1,3 +1,8 @@
-gem "rackup", "~> 2.1"
+source "https://rubygems.org"
+git_source(:github) { |repo| "https://github.com/#{repo}.git" }
+
+gem "rerun", "~> 0.14.0"
+gem "puma", "~> 6.4"
 gem "sinatra", "~> 4.0"
-gem "sinatra-contrib"
+gem "sinatra-contrib", "~> 4.0"
+gem "cairo", "~> 1.17"

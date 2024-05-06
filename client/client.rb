@@ -79,7 +79,7 @@ end
 puts 'nara procon system'
 puts
 
-uri = URI.parse('http://localhost:4567/api/question')
+uri = URI.parse('http://localhost:9292/api/question')
 json = Net::HTTP.get(uri)
 json_data = JSON.parse(json)
 

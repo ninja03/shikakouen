@@ -8,6 +8,24 @@ def load_sample_question
   JSON.load(File.read('question.json'), nil, symbolize_names: true, create_additions: false)
 end
 
+def create_image(board_width, board_height, data, colors)
+  Tempfile.create do |f|
+    ps = 4
+    surface = Cairo::ImageSurface.new(Cairo::FORMAT_ARGB32, board_width * ps, board_height * ps)
+    context = Cairo::Context.new(surface)
+    board_height.times do |y|
+      board_width.times do |x|
+        context.set_source_color(colors[data[y][x].to_i])
+        context.rectangle(x * ps, y * ps, ps, ps)
+        context.fill
+      end
+    end
+    surface.write_to_png(f.path)
+    content_type :png
+    File.binread(f.path)
+  end
+end
+
 configure do
   $question = load_sample_question
 end
@@ -79,23 +97,5 @@ get "/image/pattern/:p" do
     p[:p] == params[:p].to_i
   end
   colors = ["lightgray", "black"]
-  create_image( pattern[:width], pattern[:height], pattern[:cells], colors)
-end
-
-def create_image(board_width, board_height, data, colors)
-  Tempfile.create do |f|
-    ps = 4
-    surface = Cairo::ImageSurface.new(Cairo::FORMAT_ARGB32, board_width * ps, board_height * ps)
-    context = Cairo::Context.new(surface)
-    board_height.times do |y|
-      board_width.times do |x|
-        context.set_source_color(colors[data[y][x].to_i])
-        context.rectangle(x * ps, y * ps, ps, ps)
-        context.fill
-      end
-    end
-    surface.write_to_png(f.path)
-    content_type :png
-    File.binread(f.path)
-  end
+  create_image(pattern[:width], pattern[:height], pattern[:cells], colors)
 end
