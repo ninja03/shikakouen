@@ -1,5 +1,4 @@
-<a href="/sample"><button>サンプル問題を読み込む</button></a>
-<a href="/random"><button>ランダム問題を作成する</button></a>
+<a href="/random"><button>問題を作成する</button></a>
 <a href="/api/question">問題API</a>
 <br>
 <br>
@@ -12,6 +11,6 @@
 <br>
 一般抜き型<br>
 <% @question[:general][:patterns].each do |pattern| %>
-  <img src="/image/pattern/<%= pattern[:p] %>"><br>
+  <%= pattern[:p] %><img src="/image/pattern/<%= pattern[:p] %>"><br>
   <br>
 <% end %>
