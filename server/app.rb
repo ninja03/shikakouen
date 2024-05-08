@@ -10,26 +10,30 @@ def load_sample_question
 end
 
 class Board
-  attr_accessor :width, :height, :data
+  attr_reader :data
 
-  def initialize(width, height, data)
-    @width = width
-    @height = height
+  def initialize(data)
     @data = data
   end
 
+  def width = @data[0].size
+  def height = @data.size
+
   def self.from_file(filename)
-    data = Tempfile.create do |f|
+    Tempfile.create do |f|
       img = Magick::Image.read(filename).first.resize_to_fit(256, 256).quantize(4, Magick::GRAYColorspace)
       pixels = img.get_pixels(0, 0, img.columns, img.rows).map{ |pixel| pixel.to_hsla[2] }
       pixel_table = pixels.uniq.sort.map.with_index { |pixel, i| [pixel.to_s, i] }.to_h
-      pixels.map { |pixel| pixel_table[pixel.to_s] }.each_slice(img.columns).to_a
+      data = pixels.map { |pixel| pixel_table[pixel.to_s] }.each_slice(img.columns).to_a
+      Board.new(data)
     end
-    Board.new(data[0].size, data.size, data)
   end
 end
 
-def create_image(board_width, board_height, data, colors)
+def create_image(data)
+  board_width = data[0].size
+  board_height = data.size
+  colors = ["black", "gray", "lightgray", "white"]
   Tempfile.create do |f|
     ps = 4
     surface = Cairo::ImageSurface.new(Cairo::FORMAT_ARGB32, board_width * ps, board_height * ps)
@@ -186,22 +190,17 @@ post '/api/answer' do
   params = JSON.parse(request.body.read)
 end
 
-$colors = ["black", "gray", "lightgray", "white"]
-
 get '/image/start' do
-  board = $question[:board]
-  create_image(board[:width], board[:height], board[:start], $colors)
+  create_image($question[:board][:start])
 end
 
 get "/image/goal" do
-  board = $question[:board]
-  create_image(board[:width], board[:height], board[:goal], $colors)
+  create_image($question[:board][:goal])
 end
 
 get "/image/pattern/:p" do
   pattern = $question[:general][:patterns].find do |p|
     p[:p] == params[:p].to_i
   end
-  colors = ["lightgray", "black"]
-  create_image(pattern[:width], pattern[:height], pattern[:cells], colors)
+  create_image(pattern[:cells])
 end
