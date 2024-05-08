@@ -9,12 +9,23 @@ def load_sample_question
   JSON.load(File.read('question.json'), nil, symbolize_names: true, create_additions: false)
 end
 
-def read_denokun_image
-  Tempfile.create do |f|
-    img = Magick::Image.read("deno_news.png").first.resize_to_fit(256, 256).quantize(4, Magick::GRAYColorspace)
-    pixels = img.get_pixels(0, 0, img.columns, img.rows).map{ |pixel| pixel.to_hsla[2] }
-    pixel_table = pixels.uniq.sort.map.with_index { |pixel, i| [pixel.to_s, i] }.to_h
-    pixels.map { |pixel| pixel_table[pixel.to_s] }.each_slice(img.columns).to_a
+class Board
+  attr_accessor :width, :height, :data
+
+  def initialize(width, height, data)
+    @width = width
+    @height = height
+    @data = data
+  end
+
+  def self.from_file(filename)
+    data = Tempfile.create do |f|
+      img = Magick::Image.read(filename).first.resize_to_fit(256, 256).quantize(4, Magick::GRAYColorspace)
+      pixels = img.get_pixels(0, 0, img.columns, img.rows).map{ |pixel| pixel.to_hsla[2] }
+      pixel_table = pixels.uniq.sort.map.with_index { |pixel, i| [pixel.to_s, i] }.to_h
+      pixels.map { |pixel| pixel_table[pixel.to_s] }.each_slice(img.columns).to_a
+    end
+    Board.new(data[0].size, data.size, data)
   end
 end
 
@@ -118,13 +129,11 @@ def shuffle_board(board, katalist)
 end
 
 def create_random_question
-  goal = read_denokun_image
-  board_width = goal[0].size
-  board_height = goal.size
+  goal = Board.from_file("deno_news.png")
   katalist = []
   general_patterns = (1..10).map do |i|
-    pattern_width = rand(2..board_width / 3)
-    pattern_height = rand(2..board_height / 3)
+    pattern_width = rand(2..goal.width / 3)
+    pattern_height = rand(2..goal.height / 3)
     cells = Array.new(pattern_height) { Array.new(pattern_width) { rand(2) } }
     katalist << cells
     {
@@ -135,17 +144,17 @@ def create_random_question
     }
   end
   copy_goal = []
-  goal.each do |a|
+  goal.data.each do |a|
     copy_goal.push(a.dup)
   end
   start = shuffle_board(copy_goal, katalist)
 
   $question = {
     board: {
-      width: board_width,
-      height: board_height,
+      width: goal.width,
+      height: goal.height,
       start: start.map { |a| a.join },
-      goal: goal.map { |a| a.join }
+      goal: goal.data.map { |a| a.join }
     },
     general: {
       n: general_patterns.size,
