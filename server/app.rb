@@ -9,79 +9,12 @@ def load_sample_question
   JSON.load(File.read('question.json'), nil, symbolize_names: true, create_additions: false)
 end
 
-def quantize_to_grayscale(value, levels)
-  step = 255 / (levels - 1)
-  ((value / step).round) * step
-end
-
-def read_image()
+def read_denokun_image
   Tempfile.create do |f|
-    image = Magick::Image.read("deno_news.png").first
-
-    image = image.resize_to_fit(256,256)
-
-    image = image.quantize(4, Magick::GRAYColorspace)
-
-    image.write(f.path)
-
-    # original = Cairo::ImageSurface.from_png("deno_news.png");
-
-    # scale= 256.0 /  [original.width, original.height].max
-    # new_width = (original.width * scale).to_i
-    # new_height = (original.height * scale).to_i
-
-    # scaled = Cairo::ImageSurface.new(original.format, new_width, new_height)
-
-    # # 新しいサイズに描画するためのContextを作成
-    # context = Cairo::Context.new(scaled)
-
-    # # スケールを設定して元の画像を描画
-    # context.scale(scale, scale)
-    # context.set_source(original, 0, 0)
-    # context.paint
-
-    # # グレースケール変換
-    # # 新しい画像サーフェスを作成
-    # grayscale = Cairo::ImageSurface.new(scaled.format, new_width, new_height)
-    # context = Cairo::Context.new(grayscale)
-
-    # # p scaled.data[0]
-
-    # # 元の画像の各ピクセルを処理
-    # new_width.times do |x|
-    #   new_height.times do |y|
-    #     # pixel_str = scaled.data[y * new_width + x]
-    #     # p pixel_str.
-    #     # pixel=pixel_str.sub('\x', '').to_i(16)
-
-    #     pixel = scaled.get_pixel(x,y)
-    #     p(pixel)
-
-    #     if y>30
-    #       break
-    #     end
-    #     # RGBの値を取得
-    #     r = (pixel >> 16) & 0xff
-    #     g = (pixel >> 8) & 0xff
-    #     b = pixel & 0xff
-
-    #     # グレースケール値を計算（輝度計算）
-    #     gray = (0.299 * r + 0.587 * g + 0.114 * b).to_i
-
-    #     # 4つのレベルに量子化
-    #     quantized_gray = quantize_to_grayscale(gray, 4)
-
-    #     # 新しいグレースケール値をセット
-    #     context.set_source_rgb(quantized_gray / 255.0, quantized_gray / 255.0, quantized_gray / 255.0)
-    #     context.rectangle(x, y, 1, 1)
-    #     context.fill
-    #   end
-    #   break
-    # end
-
-    # scaled.write_to_png(f.path)
-    content_type :png
-    File.binread(f.path)
+    img = Magick::Image.read("deno_news.png").first.resize_to_fit(256, 256).quantize(4, Magick::GRAYColorspace)
+    pixels = img.get_pixels(0, 0, img.columns, img.rows).map{ |pixel| pixel.to_hsla[2] }
+    pixel_table = pixels.uniq.sort.map.with_index { |pixel, i| [pixel.to_s, i] }.to_h
+    pixels.map { |pixel| pixel_table[pixel.to_s] }.each_slice(img.columns).to_a
   end
 end
 
@@ -174,7 +107,7 @@ def katanuki(board, kata, px, py, dir)
 end
 
 def shuffle_board(board, katalist)
-  3.times do
+  10.times do
     kata = katalist.sample
     dir = [:left, :right, :down, :up].sample
     px = rand(0..(board[0].size - kata[0].size))
@@ -185,25 +118,13 @@ def shuffle_board(board, katalist)
 end
 
 def create_random_question
-  board_width = 10
-  board_height = 10
-
-  goal = [
-    [0,0,0,0,0,0,0,0,0,0],
-    [0,1,1,1,1,1,1,1,1,0],
-    [0,1,0,0,0,0,0,0,0,0],
-    [0,1,0,0,0,0,0,0,0,0],
-    [0,1,0,0,0,0,0,0,0,0],
-    [0,1,0,0,0,0,0,0,0,0],
-    [0,1,0,0,0,0,0,0,0,0],
-    [0,1,0,0,0,0,0,0,0,0],
-    [0,1,1,1,1,1,1,1,1,0],
-    [0,0,0,0,0,0,0,0,0,0]
-  ]
+  goal = read_denokun_image
+  board_width = goal[0].size
+  board_height = goal.size
   katalist = []
-  general_patterns = (1..2).map do |i|
-    pattern_width = rand(2..2)
-    pattern_height = rand(2..2)
+  general_patterns = (1..10).map do |i|
+    pattern_width = rand(2..board_width / 3)
+    pattern_height = rand(2..board_height / 3)
     cells = Array.new(pattern_height) { Array.new(pattern_width) { rand(2) } }
     katalist << cells
     {
@@ -256,12 +177,11 @@ post '/api/answer' do
   params = JSON.parse(request.body.read)
 end
 
-$colors = ["lightgray", "black", "red", "blue"]
+$colors = ["black", "gray", "lightgray", "white"]
 
 get '/image/start' do
   board = $question[:board]
-  read_image
-  # create_image(board[:width], board[:height], board[:start], $colors)
+  create_image(board[:width], board[:height], board[:start], $colors)
 end
 
 get "/image/goal" do
